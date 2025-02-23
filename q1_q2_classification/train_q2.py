@@ -17,7 +17,18 @@ class ResNet(nn.Module):
         ##################################################################
         # TODO: Define a FC layer here to process the features
         ##################################################################
-        pass
+        for param in self.resnet.parameters():
+            param.requires_grad = False
+            
+       
+        self.resnet.fc = nn.Linear(self.resnet.fc.in_features, num_classes)
+
+        self.resnet.layer1[1].conv1.weight.requires_grad = True
+        self.resnet.layer4[0].bn2.bias.requires_grad = True
+        
+       
+       
+
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -27,7 +38,9 @@ class ResNet(nn.Module):
         ##################################################################
         # TODO: Return raw outputs here
         ##################################################################
-        pass
+        
+        out = self.resnet(x)
+        return out
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -45,16 +58,19 @@ if __name__ == "__main__":
     # You should experiment and choose the correct hyperparameters
     # You should get a map of around 50 in 50 epochs
     ##################################################################
-    # args = ARGS(
-    #     epochs=50,
-    #     inp_size=64,
-    #     use_cuda=True,
-    #     val_every=70
-    #     lr=# TODO,
-    #     batch_size=#TODO,
-    #     step_size=#TODO,
-    #     gamma=#TODO
-    # )
+    args = ARGS(
+        epochs=50,
+        inp_size=224,
+        use_cuda=True,
+        val_every=70,
+        lr=1e-4, #TODO,
+        batch_size=32, #TODO,
+        step_size=10, #TODO,
+        gamma=0.9, #TODO
+        save_at_end = True
+     
+    )
+  
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################
@@ -74,8 +90,14 @@ if __name__ == "__main__":
     ##################################################################
 
     # initializes Adam optimizer and simple StepLR scheduler
+    # for name, param in model.named_parameters():
+    #     print(f"{name}: requires_grad={param.requires_grad}")
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
-    # trains model using your training code and reports test map
+    # # trains model using your training code and reports test map
+    
+    # optimizer = torch.optim.AdamW(model.resnet.fc.parameters(), lr=args.lr)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2)
+    
     test_ap, test_map = trainer.train(args, model, optimizer, scheduler)
     print('test map:', test_map)

@@ -54,6 +54,14 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             #   - `output`: Computed loss, a single floating point number
             ##################################################################
             loss = 0
+            epsilon = 1e-7
+            # print(epsilon)
+            output = torch.sigmoid(output)
+            output = torch.clamp(output, min=epsilon, max=1-epsilon)
+            loss = -1 * (target * torch.log(output) + (1 - target) * torch.log(1 - output))
+            loss = wgt * loss
+            loss = loss.mean()
+            
             ##################################################################
             #                          END OF YOUR CODE                      #
             ##################################################################

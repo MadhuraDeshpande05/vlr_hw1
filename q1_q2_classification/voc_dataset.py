@@ -20,7 +20,7 @@ class VOCDataset(Dataset):
     for i in range(len(CLASS_NAMES)):
         INV_CLASS[CLASS_NAMES[i]] = i
 
-    def __init__(self, split, size, data_dir='data/VOCdevkit/VOC2007/'):
+    def __init__(self, split, size, data_dir='/home/ubuntu/vlr_hw1/data/VOCdevkit/VOC2007'):
         super().__init__()
         self.split = split
         self.data_dir = data_dir
@@ -55,6 +55,7 @@ class VOCDataset(Dataset):
         for index in self.index_list:
             fpath = os.path.join(self.ann_dir, index + '.xml')
             tree = ET.parse(fpath)
+            root = tree.getroot()
             
             #######################################################################
             # TODO: Insert your code here to preload labels
@@ -71,6 +72,18 @@ class VOCDataset(Dataset):
             # The weight vector should be a 20-dimensional vector with weight[i] = 0 iff an object of class i has the `difficult` attribute set to 1 in the XML file and 1 otherwise
             # The difficult attribute specifies whether a class is ambiguous and by setting its weight to zero it does not contribute to the loss during training 
             weight_vec = torch.ones(20)
+
+
+            for obj in root.findall("object"):
+                class_name = obj.find('name').text
+                if class_name in self.INV_CLASS:
+                    class_id = self.INV_CLASS[class_name]  
+                    class_vec[class_id] = 1 
+
+                    difficult = (obj.find("difficult").text)
+                    if difficult is not None and difficult == "1":
+                        weight_vec[class_id] = 0 
+
 
             ######################################################################
             #                            END OF YOUR CODE                        #
@@ -92,7 +105,14 @@ class VOCDataset(Dataset):
         # change and you will have to write the correct value of `flat_dim`
         # in line 46 in simple_cnn.py
         ######################################################################
-        pass
+    
+        return [
+            # transforms.RandomResizedCrop(self.size, scale=(0.9, 1.0)),  # Crop with slight variation
+            # transforms.RandomHorizontalFlip(p=0.6),  # 60% chance to flip horizontally
+            transforms.RandomResizedCrop(self.size, scale=(1.0, 1.0)),  # Crop with slight variation
+        ]
+
+    
         ######################################################################
         #                            END OF YOUR CODE                        #
         ######################################################################
